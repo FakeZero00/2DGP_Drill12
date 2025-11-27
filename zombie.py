@@ -85,11 +85,20 @@ class Zombie:
     def distance_less_than(self, x1, y1, x2, y2, r):
         return (x1 - x2) ** 2 + (y1 - y2) ** 2 < (r * PIXEL_PER_METER) ** 2
 
+    def distance_more_than(self, x1, y1, x2, y2, r):
+        return (x1 - x2) ** 2 + (y1 - y2) ** 2 > (r * PIXEL_PER_METER) ** 2
+
     def move_little_to(self, tx, ty):
         self.dir = math.atan2(ty - self.y, tx - self.x)
         distance = RUN_SPEED_PPS * game_framework.frame_time
         self.x += distance * math.cos(self.dir)
         self.y += distance * math.sin(self.dir)
+
+    def reverse_move_little_to(self, tx, ty):
+        self.dir = math.atan2(ty - self.y, tx - self.x)
+        distance = RUN_SPEED_PPS * game_framework.frame_time
+        self.x -= distance * math.cos(self.dir)
+        self.y -= distance * math.sin(self.dir)
 
     def move_to(self, r=0.5):
         self.state = 'Walk'
@@ -99,6 +108,7 @@ class Zombie:
             return BehaviorTree.SUCCESS
         else:
             return BehaviorTree.RUNNING
+
 
     def set_random_location(self):
         self.tx = random.randint(100, 1180)
@@ -134,6 +144,15 @@ class Zombie:
         self.loc_no = (self.loc_no + 1) % len(self.patrol_locations)
         return BehaviorTree.SUCCESS
 
+    def run_away_from_boy(self, r = 0.5):
+        self.state = 'Walk'
+        self.reverse_move_little_to(common.boy.x, common.boy.y)
+        if self.distance_more_than(common.boy.x, common.boy.y, self.x, self.y, r):
+            return BehaviorTree.SUCCESS
+        else:
+            return BehaviorTree.RUNNING
+
+
     def build_behavior_tree(self):
         a1 = Action('목표 지점 설정', self.set_target_location, 800, 800)
         a2 = Action('목표 지점으로 이동', self.move_to)
@@ -151,7 +170,8 @@ class Zombie:
 
         a5 = Action('다음 순찰 위치를 가져오기', self.get_patrol_location)
         patrol = Sequence('순찰', a5, a2)
-        
+
+        a6 = Action('도망', self.run_away_from_boy)
         #find_boy = Sequence('소년 발견', c1, )
 
         root = chase_or_wander = Selector('소년이 가까이 있으면 추적하고, 아니면 순찰', chase_if_boy_nearby, patrol)
