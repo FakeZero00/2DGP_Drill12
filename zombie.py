@@ -174,11 +174,9 @@ class Zombie:
 
         chase_boy = Sequence('소년 추적', c2, a4)
         a6 = Action('도망', self.run_away_from_boy)
-        chase_boy_if_have_more_balls = Selector('소년 추적 또는 도망', find_boy, a6)
+        chase_boy_if_have_more_balls = Selector('소년 추적 또는 도망', chase_boy, a6)
 
         find_boy = Sequence('소년 발견', c1, chase_boy_if_have_more_balls)
-        
-
-        root = chase_or_wander = Selector('소년이 가까이 있으면 추적하고, 아니면 순찰', chase_if_boy_nearby, patrol)
+        root = Selector('소년 발견 또는 배회', find_boy, wander)
 
         self.bt = BehaviorTree(root)
